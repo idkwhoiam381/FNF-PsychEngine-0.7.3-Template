@@ -170,8 +170,10 @@ class NoteOffsetState extends MusicBeatState
 		Conductor.bpm = 128.0;
 		FlxG.sound.playMusic(Paths.music('offsetSong'), 1, true);
 
+		#if mobile
 		addTouchPad("LEFT_FULL", "A_B_C");
 		addTouchPadCamera();
+		#end
 
 		super.create();
 	}

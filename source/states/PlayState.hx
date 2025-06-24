@@ -619,7 +619,9 @@ class PlayState extends MusicBeatState
 			}
 		#end
 
+		#if mobile
 		addMobileControls();
+		#end
 
 		startCallback();
 		RecalculateRating();
@@ -3562,6 +3564,7 @@ class PlayState extends MusicBeatState
 	}
 	#end
 
+	#if mobile
 	public function makeLuaTouchPad(DPadMode:String, ActionMode:String) {
 		if(members.contains(luaTouchPad)) return;
 
@@ -3656,4 +3659,5 @@ class PlayState extends MusicBeatState
 		}
 		return false;
 	}
+	#end
 }

@@ -165,8 +165,10 @@ class EditorPlayState extends MusicBeatSubstate
 		addTouchPadCamera();
 		#end
 
+		#if mobile
 		addMobileControls();
 		mobileControls.instance.visible = true;
+		#end
 
 		RecalculateRating();
 	}

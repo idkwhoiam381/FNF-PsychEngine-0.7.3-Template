@@ -134,7 +134,9 @@ class CreditsState extends MusicBeatState
 		intendedColor = bg.color;
 		changeSelection();
 
+		#if mobile
 		addTouchPad("UP_DOWN", "A_B");
+		#end
 
 		super.create();
 	}

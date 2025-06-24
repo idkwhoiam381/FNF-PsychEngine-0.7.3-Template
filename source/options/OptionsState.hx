@@ -11,7 +11,24 @@ import sys.thread.Mutex;
 
 class OptionsState extends MusicBeatState
 {
-	var options:Array<String> = ['Note Colors', 'Controls', 'Adjust Delay and Combo', 'Graphics', 'Visuals and UI', 'Gameplay', 'Mobile Options'];
+	var options:Array<String> = [
+		'Note Colors',
+		'Controls',
+
+		#if mobile
+		'Mobile Controls',
+		#end
+		
+		'Adjust Delay and Combo',
+		'Graphics',
+		'Visuals and UI',
+		'Gameplay',
+
+		#if mobile
+		'Mobile Options'
+		#end
+	];
+	
 	private var grpOptions:FlxTypedGroup<Alphabet>;
 	private static var curSelected:Int = 0;
 	public static var menuBG:FlxSprite;
@@ -21,12 +38,16 @@ class OptionsState extends MusicBeatState
 
 	function openSelectedSubstate(label:String) {
 		persistentUpdate = false;
+		
 		if (label != "Adjust Delay and Combo") removeTouchPad();
+		
 		switch(label) {
 			case 'Note Colors':
 				openSubState(new options.NotesSubState());
 			case 'Controls':
 				openSubState(new options.ControlsSubState());
+			case 'Mobile Controls':
+				openSubState(new mobile.substates.MobileControlSelectSubState());
 			case 'Graphics':
 				openSubState(new options.GraphicsSettingsSubState());
 			case 'Visuals and UI':
@@ -84,7 +105,9 @@ class OptionsState extends MusicBeatState
 		changeSelection();
 		ClientPrefs.saveSettings();
 
+		#if mobile
 		addTouchPad("UP_DOWN", "A_B_C");
+		#end
 
 		#if (target.threaded)
 		Thread.create(()->{
@@ -111,8 +134,12 @@ class OptionsState extends MusicBeatState
 		ClientPrefs.saveSettings();
 		ClientPrefs.loadPrefs();
 		controls.isInSubstate = false;
-        removeTouchPad();
+
+		#if mobile
+		removeTouchPad();
 		addTouchPad("UP_DOWN", "A_B_C");
+		#end
+		
 		persistentUpdate = true;
 	}
 
@@ -126,12 +153,6 @@ class OptionsState extends MusicBeatState
 		}
 		if (controls.UI_DOWN_P) {
 			changeSelection(1);
-		}
-
-		if (touchPad.buttonC.justPressed || FlxG.keys.justPressed.CONTROL && controls.mobileC) {
-			persistentUpdate = false;
-
-			openSubState(new MobileControlSelectSubState());
 		}
 
 		if (controls.BACK) {

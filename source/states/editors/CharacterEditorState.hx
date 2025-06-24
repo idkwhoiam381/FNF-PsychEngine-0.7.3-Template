@@ -155,8 +155,10 @@ class CharacterEditorState extends MusicBeatState
 		updateHealthBar();
 		character.finishAnimation();
 
+		#if mobile
 		addTouchPad("LEFT_FULL", "CHARACTER_EDITOR");
 		addTouchPadCamera();
+		#end
 
 		if(ClientPrefs.data.cacheOnGPU) Paths.clearUnusedMemory();
 

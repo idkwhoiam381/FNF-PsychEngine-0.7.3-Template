@@ -35,7 +35,9 @@ class OutdatedState extends MusicBeatState
 		warnText.screenCenter(Y);
 		add(warnText);
 
+		#if mobile
 		addTouchPad("NONE", "A_B");
+		#end
 	}
 
 	override function update(elapsed:Float)
@@ -43,7 +45,7 @@ class OutdatedState extends MusicBeatState
 		if(!leftState) {
 			if (controls.ACCEPT) {
 				leftState = true;
-				CoolUtil.browserLoad("https://github.com/MobilePorting/FNF-PsychEngine-Mobile/releases");
+				CoolUtil.browserLoad("https://github.com/AliAlafandy/FNF-PsychEngine-Mobile-0.7.3-Template/releases");
 			}
 			else if(controls.BACK) {
 				leftState = true;

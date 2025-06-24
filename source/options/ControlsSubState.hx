@@ -113,7 +113,9 @@ class ControlsSubState extends MusicBeatSubstate
 		text.setScale(0.4);
 		add(text);
 
+		#if mobile
 		addTouchPad("LEFT_FULL", "A_B_C");
+		#end
 
 		createTexts();
 	}

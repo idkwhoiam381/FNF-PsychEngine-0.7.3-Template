@@ -390,7 +390,9 @@ class ChartingState extends MusicBeatState
 
 		updateGrid();
 
-        addTouchPad("LEFT_FULL", "CHART_EDITOR");
+		#if mobile
+		addTouchPad("LEFT_FULL", "CHART_EDITOR");
+		#end
 				
 		super.create();
 	}

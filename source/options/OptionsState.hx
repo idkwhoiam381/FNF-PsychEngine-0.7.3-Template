@@ -77,15 +77,6 @@ class OptionsState extends MusicBeatState
 		bg.screenCenter();
 		add(bg);
 
-                if (controls.mobileC) {
-		tipText = new FlxText(150, FlxG.height - 24, 0, 'Press ' + #if mobile 'C' #else 'CTRL or C' #end + ' to Go Mobile Controls Menu', 16);
-		tipText.setFormat("VCR OSD Mono", 17, FlxColor.WHITE, LEFT, FlxTextBorderStyle.OUTLINE, FlxColor.BLACK);
-		tipText.borderSize = 1.25;
-		tipText.scrollFactor.set();
-		tipText.antialiasing = ClientPrefs.data.antialiasing;
-		add(tipText);
-                }
-
 		grpOptions = new FlxTypedGroup<Alphabet>();
 		add(grpOptions);
 
@@ -106,7 +97,7 @@ class OptionsState extends MusicBeatState
 		ClientPrefs.saveSettings();
 
 		#if mobile
-		addTouchPad("UP_DOWN", "A_B_C");
+		addTouchPad("UP_DOWN", "A_B");
 		#end
 
 		#if (target.threaded)
@@ -137,7 +128,7 @@ class OptionsState extends MusicBeatState
 
 		#if mobile
 		removeTouchPad();
-		addTouchPad("UP_DOWN", "A_B_C");
+		addTouchPad("UP_DOWN", "A_B");
 		#end
 		
 		persistentUpdate = true;

@@ -14,11 +14,6 @@ class OptionsState extends MusicBeatState
 	var options:Array<String> = [
 		'Note Colors',
 		'Controls',
-
-		#if mobile
-		'Mobile Controls',
-		#end
-		
 		'Adjust Delay and Combo',
 		'Graphics',
 		'Visuals and UI',
@@ -46,8 +41,6 @@ class OptionsState extends MusicBeatState
 				openSubState(new options.NotesSubState());
 			case 'Controls':
 				openSubState(new options.ControlsSubState());
-			case 'Mobile Controls':
-				openSubState(new mobile.substates.MobileControlSelectSubState());
 			case 'Graphics':
 				openSubState(new options.GraphicsSettingsSubState());
 			case 'Visuals and UI':
@@ -77,6 +70,16 @@ class OptionsState extends MusicBeatState
 		bg.screenCenter();
 		add(bg);
 
+		if (controls.mobileC)
+		{
+			tipText = new FlxText(150, FlxG.height - 24, 0, 'Press ' + #if mobile 'C' #else 'CTRL or C' #end + ' to Go Mobile Controls Menu', 16);
+			tipText.setFormat("VCR OSD Mono", 17, FlxColor.WHITE, LEFT, FlxTextBorderStyle.OUTLINE, FlxColor.BLACK);
+			tipText.borderSize = 1.25;
+			tipText.scrollFactor.set();
+			tipText.antialiasing = ClientPrefs.data.antialiasing;
+			add(tipText);
+		}
+
 		grpOptions = new FlxTypedGroup<Alphabet>();
 		add(grpOptions);
 
@@ -97,7 +100,7 @@ class OptionsState extends MusicBeatState
 		ClientPrefs.saveSettings();
 
 		#if mobile
-		addTouchPad("UP_DOWN", "A_B");
+		addTouchPad("UP_DOWN", "A_B_C");
 		#end
 
 		#if (target.threaded)
@@ -128,7 +131,7 @@ class OptionsState extends MusicBeatState
 
 		#if mobile
 		removeTouchPad();
-		addTouchPad("UP_DOWN", "A_B");
+		addTouchPad("UP_DOWN", "A_B_C");
 		#end
 		
 		persistentUpdate = true;
@@ -146,8 +149,14 @@ class OptionsState extends MusicBeatState
 			changeSelection(1);
 		}
 
+		if (touchPad.buttonC.justPressed || FlxG.keys.justPressed.CONTROL && controls.mobileC)
+		{
+			persistentUpdate = false;
+			openSubState(new MobileControlSelectSubState());
+		}
+
 		if (controls.BACK) {
-            exiting = true;
+            		exiting = true;
 			FlxG.sound.play(Paths.sound('cancelMenu'));
 			if(onPlayState)
 			{

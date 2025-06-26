@@ -17,7 +17,7 @@ jobs:
           - name: Android
             os: macos-15
             buildArgs: "android -final -D officialBuild"
-            artifactName: androidBuild
+            artifactName: Android
             artifactPath: "export/release/android/bin/app/build/outputs/apk/release/*.apk"
     uses: ./.github/workflows/build.yml
     with:
@@ -35,7 +35,7 @@ jobs:
       - name: Download Android Build
         uses: actions/download-artifact@main
         with:
-           name: androidBuild
+           name: Android
            path: /home/runner
 
       - name: Move Android File
@@ -44,7 +44,7 @@ jobs:
       - name: Publish The Release
         uses: softprops/action-gh-release@v2
         with:
-          name: "0.7.3"
+          name: "Template"
           tag_name: "0.7.3"
           prerelease: false
           files: |

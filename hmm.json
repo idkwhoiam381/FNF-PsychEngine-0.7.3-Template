@@ -44,7 +44,7 @@
       "type": "git",
       "dir": null,
       "ref": "main",
-      "url": "https://github.com/AliAlafandy/hxCodec"
+      "url": "https://github.com/polybiusproxy/hxCodec"
     },
     {
       "name": "SScript",
@@ -75,7 +75,7 @@
       "type": "git",
       "dir": null,
       "ref": "dev",
-      "url": "https://github.com/AliAlafandy/flxanimate.git"
+      "url": "https://github.com/ShadowMario/flxanimate.git"
     }
   ]
 }

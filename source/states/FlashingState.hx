@@ -18,25 +18,31 @@ class FlashingState extends MusicBeatState
 		var bg:FlxSprite = new FlxSprite().makeGraphic(FlxG.width, FlxG.height, FlxColor.BLACK);
 		add(bg);
 
-		if (controls.mobileC) {
-			var guh:String = "Hey, watch out!\n
-			This Mod contains some flashing lights!\n
-			Press A to disable them now or go to Options Menu.\n
-			Press B to ignore this message.\n
-			You've been warned!";
-		} else {
-			var guh:String = "Hey, watch out!\n
-			This Mod contains some flashing lights!\n
-			Press ENTER to disable them now or go to Options Menu.\n
-			Press ESCAPE to ignore this message.\n
-			You've been warned!";
-		}
+		var guhMobile:String = "Hey, watch out!\n
+		This Mod contains some flashing lights!\n
+		Press A to disable them now or go to Options Menu.\n
+		Press B to ignore this message.\n
+		You've been warned!";
+		
+		var guh:String = "Hey, watch out!\n
+		This Mod contains some flashing lights!\n
+		Press ENTER to disable them now or go to Options Menu.\n
+		Press ESCAPE to ignore this message.\n
+		You've been warned!";
 		
 		controls.isInSubstate = false; // qhar I hate it
+
+		#if mobile
+		warnTextMobile = new FlxText(0, 0, FlxG.width, guhMobile, 32);
+		warnTextMobile.setFormat("VCR OSD Mono", 32, FlxColor.WHITE, CENTER);
+		warnTextMobile.screenCenter(Y);
+		add(warnTextMobile);
+		#else
 		warnText = new FlxText(0, 0, FlxG.width, guh, 32);
 		warnText.setFormat("VCR OSD Mono", 32, FlxColor.WHITE, CENTER);
 		warnText.screenCenter(Y);
 		add(warnText);
+		#end
 
 		#if mobile
 		addTouchPad("NONE", "A_B");

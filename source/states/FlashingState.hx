@@ -10,7 +10,9 @@ class FlashingState extends MusicBeatState
 {
 	public static var leftState:Bool = false;
 
+	var wantTextMobile:FlxText;
 	var warnText:FlxText;
+	
 	override function create()
 	{
 		super.create();

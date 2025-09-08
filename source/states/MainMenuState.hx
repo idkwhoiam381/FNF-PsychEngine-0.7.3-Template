@@ -1,254 +1,207 @@
-package states;
+package;
 
-import flixel.addons.display.FlxTiledSprite;
-import flixel.addons.display.FlxGridOverlay;
-import flixel.addons.display.FlxBackdrop;
-import objects.SpriteFromSheet;
-import objects.FunkinSprite;
-import flixel.FlxObject;
-import flixel.addons.transition.FlxTransitionableState;
-import flixel.effects.FlxFlicker;
-import lime.app.Application;
-import states.editors.MasterEditorMenu;
-import options.OptionsState;
+import flixel.FlxG;
+import flixel.FlxState;
+import flixel.group.FlxTypedGroup;
+import flixel.text.FlxText;
+import flixel.ui.FlxButton;
+import flixel.tweens.FlxTween;
+import flixel.util.FlxColor;
+import flixel.math.FlxPoint;
+import flixel.FlxSprite;
+import flixel.util.FlxTimer;
 
-class CodeBG extends FlxSpriteGroup {
+class MainMenuState extends FlxState {
+    var bg:FlxSprite;
+    var bubbles:FlxTypedGroup<FlxSprite>;
+    var logo:FlxSprite;
+    var menuGroup:FlxTypedGroup<FlxSprite>;
+    var buttons:Array<FlxSprite>;
+    var buttonTexts:Array<FlxText>;
+    var selected:Int = 0;
+    var title:FlxText;
+    var musicStarted:Bool = false;
 
-	var backdrops:Array<FlxBackdrop> = [];
+    override public function create():Void {
+        super.create();
 
-	public var speed:Float = 100;
-	public function new(x:Float = 0,y:Float = 0,_width:Float = 1280,_height:Float = 720) {
-		super(x,y);
+		FlxG.mouse.visible = true;
 
-		final tSize:Int = 24;
-		final tWidth:Int = Std.int(tSize * 0.75);
+        // --- Background ---
+        bg = new FlxSprite().makeGraphic(1280, 720, FlxColor.fromHex(0xE6F6FF)); // fallback düz color
+        bg.loadGraphic(Paths.image("wii/bg"), false, 1280, 720); // -- asset: images/wii/bg.png (1280x720)
+        add(bg);
 
-		trace('length ' + Std.int(_width/tWidth));
+        // --- floating bubbles ---
+        bubbles = new FlxTypedGroup<FlxSprite>();
+        for (i in 0...12) {
+            var b = new FlxSprite();
+            b.loadGraphic(Paths.image("wii/bubble"), false, 128, 128); // asset: images/wii/bubble.png (ör: 128x128, alpha)
+            b.x = FlxG.width * Math.random();
+            b.y = FlxG.height + Math.random() * 400;
+            var scale = 0.6 + Math.random() * 1.2;
+            b.scale.set(scale, scale);
+            b.alpha = 0.15 + Math.random() * 0.35;
+            b.blend = "add";
+            bubbles.add(b);
+            add(b);
+            // rise tween
+            FlxTween.tween(b, { y: -200 - Math.random()*200 }, 6 + Math.random()*8, { type: FlxTween.PERSIST });
+        }
 
-		for (i in 0...Std.int(_width/tWidth)) {
+        // --- Logo ---
+        logo = new FlxSprite((FlxG.width / 2) - 220, 60);
+        logo.loadGraphic(Paths.image("wii/logo"), false, 440, 140); // asset: images/wii/logo.png (e.g. 440x140)
+        add(logo);
 
+        // --- Title text (FNF style) ---
+        title = new FlxText(0, 220, FlxG.width, "Wii Menu Funkin'");
+        title.setFormat(null, 38, FlxColor.fromHex(0x004B99), "center", 0);
+        add(title);
 
-			var t = new FlxText(0,0,0,FlxG.random.bool(50) ? '0' : '1',tSize);
-			t.font = Paths.font('vcr.ttf');
-			t.color = FlxColor.LIME;
-	
-			for (i in 0...3) {
-				t.text += FlxG.random.bool(50) ? '\n0' : '\n1';
-			}
-			@:privateAccess t.regenGraphic();
+        // --- Menu buttons (sağ/sol seçilebilir) ---
+        menuGroup = new FlxTypedGroup<FlxSprite>();
+        buttons = [];
+        buttonTexts = [];
 
-			// var bgGraphic = t.graphic.bitmap.clone();
-			// t.destroy();
-			//flxtiled sprite doesnt work well for this sadly
-			var s = new FlxBackdrop(t.graphic,Y);
-			s.x += t.width * i;
-			//trace(s.x + ' LOL: ' + i);
-			add(s);
-			backdrops.push(s);
-			if (i % 2 ==0) s.velocity.y = speed;
-			else s.velocity.y = -speed;
-		}
+        var labels = ["Play", "Options", "Credits", "Quit"];
+        var startX = (FlxG.width / 2) - ((labels.length * 180) / 2); // her buton ~160 genişlik + margin
+        for (i in 0...labels.length) {
+            var bx = startX + i * 180;
+            var by = 320;
+            var btn = new FlxSprite(bx, by);
+            btn.loadGraphic(Paths.image("wii/button"), false, 160, 80); // asset images/wii/button.png
+            btn.frame = 0;
+            btn.scale.set(1,1);
+            add(btn);
+            menuGroup.add(btn);
+            buttons.push(btn);
 
-		var grad = flixel.util.FlxGradient.createGradientFlxSprite(1, Std.int(_height), ([0x0,FlxColor.BLACK]));
-		grad.scale.x = _width;
-		grad.updateHitbox();
-		add(grad);
+            var txt = new FlxText(bx, by + 20, 160, labels[i]);
+            txt.setFormat(null, 22, FlxColor.WHITE, "center");
+            add(txt);
+            buttonTexts.push(txt);
 
-	}
+            // small pop tween loop
+            FlxTween.float(btn, 0.04, 2 + i * 0.15, {ease: FlxTween.QUAD_IN_OUT, loop: true});
+        }
 
-	override function update(elapsed:Float) {
-		super.update(elapsed);
+        // initial highlight
+        updateSelectionVisual();
 
-		// for (k=>i in backdrops) {
-		// 	if (!i.active) continue;
-		// 	if (k % 2 == 0) i.scrollY += speed * elapsed;
-		// 	else i.scrollY -= speed * elapsed;
-		// }
+        // --- Footer / hint ---
+        var hint = new FlxText(0, FlxG.height - 48, FlxG.width, "Use ← → or A / D to move • Press ENTER / SPACE to select");
+        hint.setFormat(null, 16, FlxColor.fromHex(0x0066CC), "center");
+        add(hint);
 
-	}
+        // play ambient menu music (optional)
+        if (Paths.fileExists(Paths.music("freakyMenu"))) {
+            FlxG.sound.playMusic(Paths.music("freakyMenu"));
+            musicStarted = true;
+        }
 
-}
-class MainMenuState extends MusicBeatState
-{
-	public static var psychEngineVersion:String = '0.7.3'; // This is also used for Discord RPC
-	public static var curSelected:Int = 0;
+        // input repeat setup
+        FlxG.keys.enabled = true;
+    }
 
-	var menuItems:FlxTypedGroup<FlxText>;
+    override public function update(elapsed:Float):Void {
+        super.update(elapsed);
 
-	var optionShit:Array<String> = [
-		'jams',
-		'members',
-		'settings'
-	];
+        // update bubble positions (if tween stops, respawn)
+        for (b in bubbles.members) {
+            if (b != null && b.y < -220) {
+                b.y = FlxG.height + Math.random() * 300;
+                b.x = Math.random() * FlxG.width;
+                FlxTween.tween(b, { y: -220 - Math.random()*200 }, 6 + Math.random()*8, { type: FlxTween.PERSIST });
+            }
+        }
 
-	var fire:FunkinSprite;
-	var logo:FlxSprite;
+        // input: left / right
+        if (FlxG.keys.justPressed.LEFT || FlxG.keys.justPressed.A) {
+            selected = (selected - 1 + buttons.length) % buttons.length;
+            playNavSound();
+            updateSelectionVisual();
+        } else if (FlxG.keys.justPressed.RIGHT || FlxG.keys.justPressed.D) {
+            selected = (selected + 1) % buttons.length;
+            playNavSound();
+            updateSelectionVisual();
+        }
 
-	override function create()
-	{
-		// Paths.clearStoredMemory();
-		// Paths.clearUnusedMemory();
-		//if(FlxG.sound.music == null) 
-			FlxG.sound.playMusic(Paths.music('freakyMenu'), 0);
+        // press select
+        if (FlxG.keys.justPressed.ENTER || FlxG.keys.justPressed.SPACE || FlxG.keys.justPressed.Z || FlxG.keys.justPressed.X) {
+            activateSelection();
+        }
 
+        // mouse hover + click (optional)
+        for (i in 0...buttons.length) {
+            var b = buttons[i];
+            if (b.overlapsPoint(new FlxPoint(FlxG.mouse.x, FlxG.mouse.y))) {
+                if (selected != i) {
+                    selected = i;
+                    playNavSound();
+                    updateSelectionVisual();
+                }
+                if (FlxG.mouse.justReleasedLeft) {
+                    activateSelection();
+                }
+            }
+        }
+    }
 
-			
+    function updateSelectionVisual():Void {
+        for (i in 0...buttons.length) {
+            var b = buttons[i];
+            var t = buttonTexts[i];
+            if (i == selected) {
+                // highlight: slightly larger, glow, and move up
+                FlxTween.tween(b, { scaleX: 1.08, scaleY: 1.08, y: b.y - 6 }, 0.12);
+                t.setFormat(null, 24, FlxColor.WHITE, "center");
+                // add quick pulse or glow
+                FlxTween.tween(b, { alpha: 1.0 }, 0.08);
+            } else {
+                FlxTween.tween(b, { scaleX: 1.0, scaleY: 1.0, y: b.y + 0 }, 0.12);
+                t.setFormat(null, 22, FlxColor.fromHex(0xEAF6FF), "center");
+                FlxTween.tween(b, { alpha: 0.95 }, 0.08);
+            }
+        }
 
-		#if MODS_ALLOWED
-		Mods.pushGlobalMods();
-		#end
-		Mods.loadTopMod();
+        // optional: bounce logo a bit on change
+        FlxTween.tween(logo, { y: logo.y - 6 }, 0.08, { onComplete: function(t){ FlxTween.tween(logo, { y: logo.y + 6 }, 0.16); }});
+    }
 
-		#if DISCORD_ALLOWED
-		// Updating Discord Rich Presence
-		DiscordClient.changePresence("In the Menus", null);
-		#end
+    function playNavSound():Void {
+        if (Paths.fileExists(Paths.sound("scrollMenu"))) {
+            FlxG.sound.play(Paths.sound("scrollMenu"));
+        }
+    }
 
-		transIn = FlxTransitionableState.defaultTransIn;
-		transOut = FlxTransitionableState.defaultTransOut;
+    function playAcceptSound():Void {
+        if (Paths.fileExists(Paths.sound("confirmMenu"))) {
+            FlxG.sound.play(Paths.sound("confirmMenu"));
+        }
+    }
 
-		persistentUpdate = persistentDraw = true;
+    function activateSelection():Void {
+        playAcceptSound();
+        switch (selected) {
+            case 0:
+                // Play -> go to song/select state (adjust to project)
+                FlxG.switchState(new states.FreeplayState()); // veya MenuState'e göre değiştirin
+            case 1:
+                // Options
+                FlxG.switchState(new options.OptionsState());
+            case 2:
+                FlxG.switchState(new states.CreditsState());
+            case 3:
+                // Quit
+                FlxG.log("Quit selected");
+                // For desktop:
+                FlxG.pause(); // ya da Sys.exit()
+        }
+    }
 
-		// var test = new CodeBG(5,0,FlxG.width * 2);
-		// add(test);
-
-		fire = new FunkinSprite();
-		fire.frames = Paths.getSparrowAtlas('menu/rolbox/sm/fire');
-		fire.animation.addByPrefix('i','fire',24);
-		fire.animation.play('i');
-		add(fire);
-
-		logo = new FlxSprite(0,50);
-		logo.frames = Paths.getSparrowAtlas('menu/rolbox/sm/logo');
-		logo.animation.addByPrefix('i','appear',24,false);
-		logo.animation.play('i');
-		logo.screenCenter(X);
-		add(logo);
-		logo.scale.set(1.25,1.25);
-
-		menuItems = new FlxTypedGroup<FlxText>();
-		add(menuItems);
-
-		for (i in 0...optionShit.length)
-		{
-
-			var scale = FlxG.random.int(1,4);
-			var tex = new FlxText(0,350 + (i * (40 + 30)),0,optionShit[i],40);
-			tex.font = Paths.font('ARIAL.TTF');
-			var width = tex.width;
-			tex.size = Std.int(tex.size/scale);
-			tex.setScale(scale);
-			tex.screenCenter(X);
-			if (i == FlxG.random.int(0,optionShit.length)) {
-				tex.x += FlxG.random.int(5,20);
-				tex.y += FlxG.random.int(-10,0);
-			}
-		
-			menuItems.add(tex);
-		}
-
-
-
-		spawn();
-		changeItem();
-		super.create();
-	}
-
-	function spawn() 
-	{
-
-		fire.graphicSize(0,FlxG.height);
-		var scale = fire.scale.y;
-		fire.scale.y = 0;
-
-		logo.visible = false;
-		for (i in menuItems) i.visible = false;
-		FlxTween.num(0, scale, 2, {onComplete: Void->{
-
-			logo.visible=true;
-			logo.animation.play('i');
-			logo.animation.finishCallback = (s:String)->{for (i in menuItems) i.visible = true; selectedSomethin=false;}
-		}}, (f)->{
-			fire.scale.y = f;
-			fire.updateHitbox();
-			fire.y = FlxG.height - fire.height + 25;
-		});
-	}
-
-	var selectedSomethin:Bool = true;
-
-	override function update(elapsed:Float)
-	{
-		if (FlxG.keys.justPressed.FOUR) FlxG.resetState();
-
-
-		if (FlxG.sound.music != null) {
-			if (FlxG.sound.music.volume < 0.8)
-			{
-				FlxG.sound.music.volume += 0.5 * elapsed;
-				if (FreeplayState.vocals != null)
-					FreeplayState.vocals.volume += 0.5 * elapsed;
-			}
-		}
-
-		if (!selectedSomethin)
-		{
-			// if (FlxG.keys.justPressed.T) {
-			// 	FlxG.switchState(new FreeplayState());
-			// }
-			if (controls.UI_UP_P || controls.UI_DOWN_P) changeItem(controls.UI_UP_P ? -1 : 1);
-
-			if (controls.ACCEPT)
-			{
-
-				FlxG.sound.music?.stop();
-
-				FlxG.sound.play(Paths.sound('bass'));
-				selectedSomethin = true;
-
-				FlxFlicker.flicker(menuItems.members[curSelected], 1, 0.06, false, false, function(flick:FlxFlicker)
-				{
-					switch (optionShit[curSelected])
-					{
-						case 'jams':
-							openSubState(new StoryMenuState());
-							// MusicBeatState.switchState(new PlayMenu());
-						case 'members':
-							FlxTransitionableState.skipNextTransIn = FlxTransitionableState.skipNextTransOut = true;
-							MusicBeatState.switchState(new ModsMenuState());
-						case 'settings':
-							FlxTransitionableState.skipNextTransIn = FlxTransitionableState.skipNextTransOut = true;
-							MusicBeatState.switchState(new OptionsState());
-							OptionsState.onPlayState = false;
-							if (PlayState.SONG != null)
-							{
-								PlayState.SONG.arrowSkin = null;
-								PlayState.SONG.splashSkin = null;
-								PlayState.stageUI = 'normal';
-							}
-					}
-				});
-			}
-			#if debug
-			if (controls.justPressed('debug_1'))
-			{
-				selectedSomethin = true;
-				MusicBeatState.switchState(new MasterEditorMenu());
-			}
-			#end
-		}
-
-		super.update(elapsed);
-	}
-
-	function changeItem(huh:Int = 0)
-	{
-		if (huh != 0)
-		FlxG.sound.play(Paths.sound('click'));
-
-		menuItems.members[curSelected].color = FlxColor.WHITE;
-		curSelected = FlxMath.wrap(curSelected + huh,0,menuItems.length-1);
-		menuItems.members[curSelected].color = FlxColor.YELLOW;
-
-	}
+    override public function destroy():Void {
+        super.destroy();
+        if (musicStarted) FlxG.sound.music.stop();
+    }
 }

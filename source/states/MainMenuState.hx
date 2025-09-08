@@ -215,7 +215,7 @@ class MainMenuState extends MusicBeatState
 							// MusicBeatState.switchState(new PlayMenu());
 						case 'members':
 							FlxTransitionableState.skipNextTransIn = FlxTransitionableState.skipNextTransOut = true;
-							MusicBeatState.switchState(new CreditsState());
+							MusicBeatState.switchState(new ModsMenuState());
 						case 'settings':
 							FlxTransitionableState.skipNextTransIn = FlxTransitionableState.skipNextTransOut = true;
 							MusicBeatState.switchState(new OptionsState());

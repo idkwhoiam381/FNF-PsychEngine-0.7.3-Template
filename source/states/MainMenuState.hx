@@ -1,207 +1,249 @@
-package;
+package states;
 
-import flixel.FlxG;
-import flixel.FlxState;
-import flixel.group.FlxTypedGroup;
-import flixel.text.FlxText;
-import flixel.ui.FlxButton;
-import flixel.tweens.FlxTween;
-import flixel.util.FlxColor;
-import flixel.math.FlxPoint;
-import flixel.FlxSprite;
-import flixel.util.FlxTimer;
+import flixel.FlxObject;
+import flixel.addons.transition.FlxTransitionableState;
+import flixel.effects.FlxFlicker;
+import lime.app.Application;
+import states.editors.MasterEditorMenu;
+import options.OptionsState;
 
-class MainMenuState extends FlxState {
-    var bg:FlxSprite;
-    var bubbles:FlxTypedGroup<FlxSprite>;
-    var logo:FlxSprite;
-    var menuGroup:FlxTypedGroup<FlxSprite>;
-    var buttons:Array<FlxSprite>;
-    var buttonTexts:Array<FlxText>;
-    var selected:Int = 0;
-    var title:FlxText;
-    var musicStarted:Bool = false;
+class MainMenuState extends MusicBeatState
+{
+	public static var psychEngineVersion:String = '0.7.3'; // This is also used for Discord RPC
+	public static var curSelected:Int = 0;
 
-    override public function create():Void {
-        super.create();
+	var menuItems:FlxTypedGroup<FlxSprite>;
 
-		FlxG.mouse.visible = true;
+	var optionShit:Array<String> = [
+		'story_mode',
+		'freeplay',
+		
+		#if MODS_ALLOWED
+		'mods',
+		#end
+		
+		#if ACHIEVEMENTS_ALLOWED
+		'awards',
+		#end
+		
+		'credits',
+		
+		#if !switch
+		'donate',
+		#end
+		
+		'options'
+	];
 
-        // --- Background ---
-        bg = new FlxSprite().makeGraphic(1280, 720, FlxColor.fromHex(0xE6F6FF)); // fallback düz color
-        bg.loadGraphic(Paths.image("wii/bg"), false, 1280, 720); // -- asset: images/wii/bg.png (1280x720)
-        add(bg);
+	var magenta:FlxSprite;
+	var camFollow:FlxObject;
 
-        // --- floating bubbles ---
-        bubbles = new FlxTypedGroup<FlxSprite>();
-        for (i in 0...12) {
-            var b = new FlxSprite();
-            b.loadGraphic(Paths.image("wii/bubble"), false, 128, 128); // asset: images/wii/bubble.png (ör: 128x128, alpha)
-            b.x = FlxG.width * Math.random();
-            b.y = FlxG.height + Math.random() * 400;
-            var scale = 0.6 + Math.random() * 1.2;
-            b.scale.set(scale, scale);
-            b.alpha = 0.15 + Math.random() * 0.35;
-            b.blend = "add";
-            bubbles.add(b);
-            add(b);
-            // rise tween
-            FlxTween.tween(b, { y: -200 - Math.random()*200 }, 6 + Math.random()*8, { type: FlxTween.PERSIST });
-        }
+	override function create()
+	{
+		#if MODS_ALLOWED
+		Mods.pushGlobalMods();
+		#end
+		Mods.loadTopMod();
 
-        // --- Logo ---
-        logo = new FlxSprite((FlxG.width / 2) - 220, 60);
-        logo.loadGraphic(Paths.image("wii/logo"), false, 440, 140); // asset: images/wii/logo.png (e.g. 440x140)
-        add(logo);
+		#if DISCORD_ALLOWED
+		// Updating Discord Rich Presence
+		DiscordClient.changePresence("In the Menus", null);
+		#end
 
-        // --- Title text (FNF style) ---
-        title = new FlxText(0, 220, FlxG.width, "Wii Menu Funkin'");
-        title.setFormat(null, 38, FlxColor.fromHex(0x004B99), "center", 0);
-        add(title);
+		transIn = FlxTransitionableState.defaultTransIn;
+		transOut = FlxTransitionableState.defaultTransOut;
 
-        // --- Menu buttons (sağ/sol seçilebilir) ---
-        menuGroup = new FlxTypedGroup<FlxSprite>();
-        buttons = [];
-        buttonTexts = [];
+		persistentUpdate = persistentDraw = true;
 
-        var labels = ["Play", "Options", "Credits", "Quit"];
-        var startX = (FlxG.width / 2) - ((labels.length * 180) / 2); // her buton ~160 genişlik + margin
-        for (i in 0...labels.length) {
-            var bx = startX + i * 180;
-            var by = 320;
-            var btn = new FlxSprite(bx, by);
-            btn.loadGraphic(Paths.image("wii/button"), false, 160, 80); // asset images/wii/button.png
-            btn.frame = 0;
-            btn.scale.set(1,1);
-            add(btn);
-            menuGroup.add(btn);
-            buttons.push(btn);
+		var yScroll:Float = Math.max(0.25 - (0.05 * (optionShit.length - 4)), 0.1);
+		var bg:FlxSprite = new FlxSprite(-80).loadGraphic(Paths.image('menuBG'));
+		bg.antialiasing = ClientPrefs.data.antialiasing;
+		bg.scrollFactor.set(0, yScroll);
+		bg.setGraphicSize(Std.int(bg.width * 1.175));
+		bg.updateHitbox();
+		bg.screenCenter();
+		add(bg);
 
-            var txt = new FlxText(bx, by + 20, 160, labels[i]);
-            txt.setFormat(null, 22, FlxColor.WHITE, "center");
-            add(txt);
-            buttonTexts.push(txt);
+		camFollow = new FlxObject(0, 0, 1, 1);
+		add(camFollow);
 
-            // small pop tween loop
-            FlxTween.float(btn, 0.04, 2 + i * 0.15, {ease: FlxTween.QUAD_IN_OUT, loop: true});
-        }
+		magenta = new FlxSprite(-80).loadGraphic(Paths.image('menuDesat'));
+		magenta.antialiasing = ClientPrefs.data.antialiasing;
+		magenta.scrollFactor.set(0, yScroll);
+		magenta.setGraphicSize(Std.int(magenta.width * 1.175));
+		magenta.updateHitbox();
+		magenta.screenCenter();
+		magenta.visible = false;
+		magenta.color = 0xFFfd719b;
+		add(magenta);
 
-        // initial highlight
-        updateSelectionVisual();
+		menuItems = new FlxTypedGroup<FlxSprite>();
+		add(menuItems);
 
-        // --- Footer / hint ---
-        var hint = new FlxText(0, FlxG.height - 48, FlxG.width, "Use ← → or A / D to move • Press ENTER / SPACE to select");
-        hint.setFormat(null, 16, FlxColor.fromHex(0x0066CC), "center");
-        add(hint);
+		for (i in 0...optionShit.length)
+		{
+			var offset:Float = 108 - (Math.max(optionShit.length, 4) - 4) * 80;
+			var menuItem:FlxSprite = new FlxSprite(0, (i * 140) + offset);
+			menuItem.antialiasing = ClientPrefs.data.antialiasing;
+			menuItem.frames = Paths.getSparrowAtlas('mainmenu/menu_' + optionShit[i]);
+			menuItem.animation.addByPrefix('idle', optionShit[i] + " basic", 24);
+			menuItem.animation.addByPrefix('selected', optionShit[i] + " white", 24);
+			menuItem.animation.play('idle');
+			menuItems.add(menuItem);
+			var scr:Float = (optionShit.length - 4) * 0.135;
+			if (optionShit.length < 6)
+				scr = 0;
+			menuItem.scrollFactor.set(0, scr);
+			menuItem.updateHitbox();
+			menuItem.screenCenter(X);
+		}
 
-        // play ambient menu music (optional)
-        if (Paths.fileExists(Paths.music("freakyMenu"))) {
-            FlxG.sound.playMusic(Paths.music("freakyMenu"));
-            musicStarted = true;
-        }
+		var psychVer:FlxText = new FlxText(12, FlxG.height - 44, 0, "Psych Engine v" + psychEngineVersion, 12);
+		psychVer.scrollFactor.set();
+		psychVer.setFormat("VCR OSD Mono", 16, FlxColor.WHITE, LEFT, FlxTextBorderStyle.OUTLINE, FlxColor.BLACK);
+		add(psychVer);
+		var fnfVer:FlxText = new FlxText(12, FlxG.height - 24, 0, "Friday Night Funkin' v" + Application.current.meta.get('version'), 12);
+		fnfVer.scrollFactor.set();
+		fnfVer.setFormat("VCR OSD Mono", 16, FlxColor.WHITE, LEFT, FlxTextBorderStyle.OUTLINE, FlxColor.BLACK);
+		add(fnfVer);
+		changeItem();
 
-        // input repeat setup
-        FlxG.keys.enabled = true;
-    }
+		#if ACHIEVEMENTS_ALLOWED
+		// Unlocks "Freaky on a Friday Night" achievement if it's a Friday and between 18:00 PM and 23:59 PM
+		var leDate = Date.now();
+		if (leDate.getDay() == 5 && leDate.getHours() >= 18)
+			Achievements.unlock('friday_night_play');
 
-    override public function update(elapsed:Float):Void {
-        super.update(elapsed);
+		#if MODS_ALLOWED
+		Achievements.reloadList();
+		#end
+		#end
 
-        // update bubble positions (if tween stops, respawn)
-        for (b in bubbles.members) {
-            if (b != null && b.y < -220) {
-                b.y = FlxG.height + Math.random() * 300;
-                b.x = Math.random() * FlxG.width;
-                FlxTween.tween(b, { y: -220 - Math.random()*200 }, 6 + Math.random()*8, { type: FlxTween.PERSIST });
-            }
-        }
+		#if mobile
+		addTouchPad("UP_DOWN", "A_B_E");
+		#end
 
-        // input: left / right
-        if (FlxG.keys.justPressed.LEFT || FlxG.keys.justPressed.A) {
-            selected = (selected - 1 + buttons.length) % buttons.length;
-            playNavSound();
-            updateSelectionVisual();
-        } else if (FlxG.keys.justPressed.RIGHT || FlxG.keys.justPressed.D) {
-            selected = (selected + 1) % buttons.length;
-            playNavSound();
-            updateSelectionVisual();
-        }
+		super.create();
 
-        // press select
-        if (FlxG.keys.justPressed.ENTER || FlxG.keys.justPressed.SPACE || FlxG.keys.justPressed.Z || FlxG.keys.justPressed.X) {
-            activateSelection();
-        }
+		FlxG.camera.follow(camFollow, null, 9);
+	}
 
-        // mouse hover + click (optional)
-        for (i in 0...buttons.length) {
-            var b = buttons[i];
-            if (b.overlapsPoint(new FlxPoint(FlxG.mouse.x, FlxG.mouse.y))) {
-                if (selected != i) {
-                    selected = i;
-                    playNavSound();
-                    updateSelectionVisual();
-                }
-                if (FlxG.mouse.justReleasedLeft) {
-                    activateSelection();
-                }
-            }
-        }
-    }
+	var selectedSomethin:Bool = false;
 
-    function updateSelectionVisual():Void {
-        for (i in 0...buttons.length) {
-            var b = buttons[i];
-            var t = buttonTexts[i];
-            if (i == selected) {
-                // highlight: slightly larger, glow, and move up
-                FlxTween.tween(b, { scaleX: 1.08, scaleY: 1.08, y: b.y - 6 }, 0.12);
-                t.setFormat(null, 24, FlxColor.WHITE, "center");
-                // add quick pulse or glow
-                FlxTween.tween(b, { alpha: 1.0 }, 0.08);
-            } else {
-                FlxTween.tween(b, { scaleX: 1.0, scaleY: 1.0, y: b.y + 0 }, 0.12);
-                t.setFormat(null, 22, FlxColor.fromHex(0xEAF6FF), "center");
-                FlxTween.tween(b, { alpha: 0.95 }, 0.08);
-            }
-        }
+	override function update(elapsed:Float)
+	{
+		if (FlxG.sound.music.volume < 0.8)
+		{
+			FlxG.sound.music.volume += 0.5 * elapsed;
+			if (FreeplayState.vocals != null)
+				FreeplayState.vocals.volume += 0.5 * elapsed;
+		}
 
-        // optional: bounce logo a bit on change
-        FlxTween.tween(logo, { y: logo.y - 6 }, 0.08, { onComplete: function(t){ FlxTween.tween(logo, { y: logo.y + 6 }, 0.16); }});
-    }
+		if (!selectedSomethin)
+		{
+			if (controls.UI_UP_P)
+				changeItem(-1);
 
-    function playNavSound():Void {
-        if (Paths.fileExists(Paths.sound("scrollMenu"))) {
-            FlxG.sound.play(Paths.sound("scrollMenu"));
-        }
-    }
+			if (controls.UI_DOWN_P)
+				changeItem(1);
 
-    function playAcceptSound():Void {
-        if (Paths.fileExists(Paths.sound("confirmMenu"))) {
-            FlxG.sound.play(Paths.sound("confirmMenu"));
-        }
-    }
+			if (controls.BACK)
+			{
+				selectedSomethin = true;
+				FlxG.sound.play(Paths.sound('cancelMenu'));
+				MusicBeatState.switchState(new TitleState());
+			}
 
-    function activateSelection():Void {
-        playAcceptSound();
-        switch (selected) {
-            case 0:
-                // Play -> go to song/select state (adjust to project)
-                FlxG.switchState(new states.FreeplayState()); // veya MenuState'e göre değiştirin
-            case 1:
-                // Options
-                FlxG.switchState(new options.OptionsState());
-            case 2:
-                FlxG.switchState(new states.CreditsState());
-            case 3:
-                // Quit
-                FlxG.log("Quit selected");
-                // For desktop:
-                FlxG.pause(); // ya da Sys.exit()
-        }
-    }
+			if (controls.ACCEPT)
+			{
+				FlxG.sound.play(Paths.sound('confirmMenu'));
+				if (optionShit[curSelected] == 'donate')
+				{
+					CoolUtil.browserLoad('https://ninja-muffin24.itch.io/funkin');
+				}
+				else
+				{
+					selectedSomethin = true;
 
-    override public function destroy():Void {
-        super.destroy();
-        if (musicStarted) FlxG.sound.music.stop();
-    }
+					if (ClientPrefs.data.flashing)
+						FlxFlicker.flicker(magenta, 1.1, 0.15, false);
+
+					FlxFlicker.flicker(menuItems.members[curSelected], 1, 0.06, false, false, function(flick:FlxFlicker)
+					{
+						switch (optionShit[curSelected])
+						{
+							case 'story_mode':
+								MusicBeatState.switchState(new StoryMenuState());
+							case 'freeplay':
+								MusicBeatState.switchState(new FreeplayState());
+
+							#if MODS_ALLOWED
+							case 'mods':
+								MusicBeatState.switchState(new ModsMenuState());
+							#end
+
+							#if ACHIEVEMENTS_ALLOWED
+							case 'awards':
+								MusicBeatState.switchState(new AchievementsMenuState());
+							#end
+
+							case 'credits':
+								MusicBeatState.switchState(new CreditsState());
+							case 'options':
+								MusicBeatState.switchState(new OptionsState());
+								OptionsState.onPlayState = false;
+								if (PlayState.SONG != null)
+								{
+									PlayState.SONG.arrowSkin = null;
+									PlayState.SONG.splashSkin = null;
+									PlayState.stageUI = 'normal';
+								}
+						}
+					});
+
+					for (i in 0...menuItems.members.length)
+					{
+						if (i == curSelected)
+							continue;
+						FlxTween.tween(menuItems.members[i], {alpha: 0}, 0.4, {
+							ease: FlxEase.quadOut,
+							onComplete: function(twn:FlxTween)
+							{
+								menuItems.members[i].kill();
+							}
+						});
+					}
+				}
+			}
+			else if (controls.justPressed('debug_1') || touchPad.buttonE.justPressed)
+			{
+				selectedSomethin = true;
+				MusicBeatState.switchState(new MasterEditorMenu());
+			}
+		}
+
+		super.update(elapsed);
+	}
+
+	function changeItem(huh:Int = 0)
+	{
+		FlxG.sound.play(Paths.sound('scrollMenu'));
+		menuItems.members[curSelected].animation.play('idle');
+		menuItems.members[curSelected].updateHitbox();
+		menuItems.members[curSelected].screenCenter(X);
+
+		curSelected += huh;
+
+		if (curSelected >= menuItems.length)
+			curSelected = 0;
+		if (curSelected < 0)
+			curSelected = menuItems.length - 1;
+
+		menuItems.members[curSelected].animation.play('selected');
+		menuItems.members[curSelected].centerOffsets();
+		menuItems.members[curSelected].screenCenter(X);
+
+		camFollow.setPosition(menuItems.members[curSelected].getGraphicMidpoint().x,
+			menuItems.members[curSelected].getGraphicMidpoint().y - (menuItems.length > 4 ? menuItems.length * 8 : 0));
+	}
 }

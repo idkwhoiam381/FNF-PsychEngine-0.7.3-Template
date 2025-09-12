@@ -54,7 +54,6 @@ class HealthIcon extends FlxSprite
 		super.updateHitbox();
 		offset.x = iconOffsets[0];
 		offset.y = iconOffsets[1];
-		offset.x = iconOffsets[2];
 	}
 
 	public function getCharacter():String {

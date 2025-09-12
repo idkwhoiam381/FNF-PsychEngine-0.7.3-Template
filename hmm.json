@@ -40,13 +40,6 @@
       "url": "https://github.com/AlafandyPorting/hxcpp"
     },
     {
-      "name": "hxCodec",
-      "type": "git",
-      "dir": null,
-      "ref": "main",
-      "url": "https://github.com/polybiusproxy/hxCodec"
-    },
-    {
       "name": "SScript",
       "type": "git",
       "dir": null,
@@ -76,6 +69,11 @@
       "dir": null,
       "ref": "dev",
       "url": "https://github.com/ShadowMario/flxanimate.git"
+    },
+    {
+      "name": "hxvlc",
+      "type": "haxelib",
+      "version": "1.9.3"
     }
   ]
 }

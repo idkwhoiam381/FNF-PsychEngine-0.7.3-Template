@@ -37,13 +37,6 @@ import flixel.addons.display.FlxRuntimeShader;
 import openfl.filters.ShaderFilter;
 #end
 
-#if VIDEOS_ALLOWED
-#if (hxCodec >= "3.0.0") import hxcodec.flixel.FlxVideo as VideoHandler;
-#elseif (hxCodec >= "2.6.1") import hxcodec.VideoHandler as VideoHandler;
-#elseif (hxCodec == "2.6.0") import VideoHandler;
-#else import vlc.MP4Handler as VideoHandler; #end
-#end
-
 import objects.Note.EventNote;
 import objects.*;
 import states.stages.objects.*;
@@ -57,6 +50,11 @@ import psychlua.HScript;
 
 #if SScript
 import tea.SScript;
+#end
+
+#if VIDEOS_ALLOWED
+import objects.Video;
+import objects.VideoSprite;
 #end
 
 /**
@@ -264,6 +262,10 @@ class PlayState extends MusicBeatState
 	// Callbacks for stages
 	public var startCallback:Void->Void = null;
 	public var endCallback:Void->Void = null;
+
+	#if VIDEOS_ALLOWED
+	public var video:Video;
+	#end
 
 	public var luaTouchPad:TouchPad;
 
@@ -828,6 +830,7 @@ class PlayState extends MusicBeatState
 		#if LUA_ALLOWED
 		if(modchartSprites.exists(tag)) return modchartSprites.get(tag);
 		if(text && modchartTexts.exists(tag)) return modchartTexts.get(tag);
+		#if VIDEOS_ALLOWED if(videos && modchartVideoSprites.exists(tag)) return modchartVideoSprites.get(tag); #end
 		if(variables.exists(tag)) return variables.get(tag);
 		#end
 		return null;
@@ -843,44 +846,28 @@ class PlayState extends MusicBeatState
 		char.y += char.positionArray[1];
 	}
 
-	public function startVideo(name:String)
+	public function startVideo(name:String): #if VIDEOS_ALLOWED Video #else Void #end
 	{
 		#if VIDEOS_ALLOWED
+		var filepath:String = Paths.video(name);
+		video = new Video();
 		inCutscene = true;
 
-		var filepath:String = Paths.video(name);
-		#if sys
-		if(!FileSystem.exists(filepath))
-		#else
-		if(!OpenFlAssets.exists(filepath))
-		#end
-		{
+		if(#if MODS_ALLOWED !FileSystem.exists(filepath) #else !Assets.exists(filepath) #end) {
 			FlxG.log.warn('Couldnt find video file: ' + name);
 			startAndEnd();
-			return;
+			return null;
 		}
 
-		var video:VideoHandler = new VideoHandler();
-			#if (hxCodec >= "3.0.0")
-			// Recent versions
-			video.play(filepath);
-			video.onEndReached.add(function()
-			{
-				video.dispose();
-				startAndEnd();
-				return;
-			}, true);
-			#else
-			// Older versions
-			video.playVideo(filepath);
-			video.finishCallback = function()
-			{
-				startAndEnd();
-				return;
-			}
-			#end
+		video.startVideo(filepath);
+		video.onVideoEnd.add(function(){
+			startAndEnd();
+			return;
+		});
+
+		return video;
 		#else
-		FlxG.log.warn('Platform not supported!');
+		FlxG.log.warn('Platform not supported for video play back!');
 		startAndEnd();
 		return;
 		#end
@@ -1555,6 +1542,12 @@ class PlayState extends MusicBeatState
 			}
 			FlxTimer.globalManager.forEach(function(tmr:FlxTimer) if(!tmr.finished) tmr.active = false);
 			FlxTween.globalManager.forEach(function(twn:FlxTween) if(!twn.finished) twn.active = false);
+
+			#if VIDEOS_ALLOWED
+			for(video in modchartVideoSprites)
+				if(video != null && members.contains(video))
+					video.paused = true;
+			#end
 		}
 
 		super.openSubState(SubState);
@@ -1573,6 +1566,12 @@ class PlayState extends MusicBeatState
 			}
 			FlxTimer.globalManager.forEach(function(tmr:FlxTimer) if(!tmr.finished) tmr.active = true);
 			FlxTween.globalManager.forEach(function(twn:FlxTween) if(!twn.finished) twn.active = true);
+
+			#if VIDEOS_ALLOWED
+			for(video in modchartVideoSprites)
+				if(video != null && members.contains(video))
+					video.paused = false;
+			#end
 
 			paused = false;
 			callOnScripts('onResume');

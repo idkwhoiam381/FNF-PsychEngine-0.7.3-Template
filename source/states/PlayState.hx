@@ -55,6 +55,8 @@ import tea.SScript;
 #if VIDEOS_ALLOWED
 import objects.Video;
 import objects.VideoSprite;
+import backend.VideoManager;
+import backend.VideoSpriteManager;
 #end
 
 /**

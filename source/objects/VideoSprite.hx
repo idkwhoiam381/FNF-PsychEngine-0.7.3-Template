@@ -8,7 +8,7 @@ import hxcodec.VideoSprite as MainVideoSprite;
 #elseif (hxCodec == "2.6.0")
 import VideoSprite as MainVideoSprite;
 #else
-import vlc.MP4Sprite as VideoMainVideoSpriteprite;
+import vlc.MP4Sprite as MainVideoSprite;
 #end
 #end
 import states.PlayState;

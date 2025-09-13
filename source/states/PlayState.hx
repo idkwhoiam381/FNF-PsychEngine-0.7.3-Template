@@ -111,6 +111,9 @@ class PlayState extends MusicBeatState
 	public var modchartSounds:Map<String, FlxSound> = new Map<String, FlxSound>();
 	public var modchartTexts:Map<String, FlxText> = new Map<String, FlxText>();
 	public var modchartSaves:Map<String, FlxSave> = new Map<String, FlxSave>();
+	#if VIDEOS_ALLOWED
+	public var modchartVideoSprites:Map<String, VideoSprite> = new Map<String, VideoSprite>();
+	#end
 	#end
 
 	public var BF_X:Float = 770;
@@ -265,8 +268,6 @@ class PlayState extends MusicBeatState
 
 	#if VIDEOS_ALLOWED
 	public var video:Video;
-	var modchartVideoSprites:Array<FlxSprite> = [];
-	var videos:Array<Dynamic> = [];
 	#end
 
 	public var luaTouchPad:TouchPad;
@@ -828,7 +829,7 @@ class PlayState extends MusicBeatState
 		#end
 	}
 
-	public function getLuaObject(tag:String, text:Bool=true):FlxSprite {
+	public function getLuaObject(tag:String, text:Bool=true, videos:Bool=true):Dynamic {
 		#if LUA_ALLOWED
 		if(modchartSprites.exists(tag)) return modchartSprites.get(tag);
 		if(text && modchartTexts.exists(tag)) return modchartTexts.get(tag);
@@ -848,7 +849,7 @@ class PlayState extends MusicBeatState
 		char.y += char.positionArray[1];
 	}
 
-	public function startVideo(name:String): #if VIDEOS_ALLOWED Video #else Void #end
+	public function startVideo(name:String): #if VIDEOS_ALLOWED Video#end
 	{
 		#if VIDEOS_ALLOWED
 		var filepath:String = Paths.video(name);
@@ -873,9 +874,9 @@ class PlayState extends MusicBeatState
 		startAndEnd();
 		return;
 		#end
-	}
+}
 
-	function startAndEnd()
+	public function startAndEnd()
 	{
 		if(endingSong)
 			endSong();

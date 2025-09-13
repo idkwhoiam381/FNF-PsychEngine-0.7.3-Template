@@ -42,6 +42,7 @@ class TitleState extends MusicBeatState
 	public static var initialized:Bool = false;
 
 	var blackScreen:FlxSprite;
+	var backgroundTitle:FlxSprite;
 	var credGroup:FlxGroup;
 	var credTextShit:Alphabet;
 	var textGroup:FlxGroup;
@@ -217,6 +218,10 @@ class TitleState extends MusicBeatState
 		// logoBl.screenCenter();
 		// logoBl.color = FlxColor.BLACK;
 
+		backgroundTitle = new FlxSprite().loadGraphic(Paths.image('MenuTitleBg'));
+		backgroundTitle.screenCenter();
+		backgroundTitle.antialiasing = ClientPrefs.data.antialiasing;
+
 		if(ClientPrefs.data.shaders) swagShader = new ColorSwap();
 		gfDance = new FlxSprite(titleJSON.gfx, titleJSON.gfy);
 		gfDance.antialiasing = ClientPrefs.data.antialiasing;
@@ -251,6 +256,7 @@ class TitleState extends MusicBeatState
 				gfDance.animation.addByIndices('danceRight', 'gfDance', [15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29], "", 24, false);
 		}
 
+		add(backgroundTitle);
 		add(gfDance);
 		add(logoBl);
 		if(swagShader != null)
@@ -290,8 +296,7 @@ class TitleState extends MusicBeatState
 		logo.screenCenter();
 		// add(logo);
 
-		// FlxTween.tween(logoBl, {y: logoBl.y + 50}, 0.6, {ease: FlxEase.quadInOut, type: PINGPONG});
-		// FlxTween.tween(logo, {y: logoBl.y + 50}, 0.6, {ease: FlxEase.quadInOut, type: PINGPONG, startDelay: 0.1});
+		FlxTween.tween(logoBl, {y: logoBl.y + 50}, 0.6, {ease: FlxEase.quadInOut, type: PINGPONG});
 
 		credGroup = new FlxGroup();
 		add(credGroup);
@@ -551,14 +556,15 @@ class TitleState extends MusicBeatState
 					FlxG.sound.music.fadeIn(4, 0, 0.7);
 				case 2:
 					#if PSYCH_WATERMARKS
-					createCoolText(['Psych Engine by'], 40);
+					createCoolText(['This Stupid Guy is Compile the Psych Engine'], 40);
 					#else
-					createCoolText(['ninjamuffin99', 'phantomArcade', 'kawaisprite', 'evilsk8er']);
+					createCoolText(['XPumpkingGuyX']);
 					#end
 				case 4:
 					#if PSYCH_WATERMARKS
-					addMoreText('Shadow Mario', 40);
-					addMoreText('Riveren', 40);
+					addMoreText('XPumpkingGuyX', 40);
+					addMoreText('GAFFUR OYUNDA', 40);
+					addMoreText('Insane', 40);
 					#else
 					addMoreText('present');
 					#end
@@ -566,9 +572,9 @@ class TitleState extends MusicBeatState
 					deleteCoolText();
 				case 6:
 					#if PSYCH_WATERMARKS
-					createCoolText(['Not associated', 'with'], -40);
+					createCoolText(['Ew the Newgrounds have inappropriate content'], -40);
 					#else
-					createCoolText(['In association', 'with'], -40);
+					createCoolText(['The Newgrounds have g##ners Ew'], -40);
 					#end
 				case 8:
 					addMoreText('newgrounds', -40);
@@ -588,8 +594,12 @@ class TitleState extends MusicBeatState
 					addMoreText('Night');
 				case 16:
 					addMoreText('Funkin'); // credTextShit.text += '\nFunkin';
-
 				case 17:
+					addMoreText('pumpkingguy');
+				case 18:
+					addMoreText('Engine');
+
+				case 19:
 					skipIntro();
 			}
 		}

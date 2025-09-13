@@ -265,6 +265,8 @@ class PlayState extends MusicBeatState
 
 	#if VIDEOS_ALLOWED
 	public var video:Video;
+	var modchartVideoSprites:Array<FlxSprite> = [];
+	var videos:Array<Dynamic> = [];
 	#end
 
 	public var luaTouchPad:TouchPad;
